@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# Colors
 RED='\e[31m'
 GREEN='\e[32m'
 YELLOW='\e[33m'
@@ -8,19 +7,16 @@ BLUE='\e[34m'
 MAGENTA='\e[35m'
 CYAN='\e[36m'
 WHITE='\e[97m'
-NC='\e[0m' # No Color
+NC='\e[0m'
 
-# Clear screen
 clear
 
-# Header
 header() {
   echo -e "${WHITE}┌───────────────────────────────┐${NC}"
   echo -e "${WHITE}│  🛠️  Windows XP Control Panel  │${NC}"
   echo -e "${WHITE}└───────────────────────────────┘${NC}"
 }
 
-# Info block
 about_me() {
   echo -e "${WHITE}┌──────────────────────────────────────────┐${NC}"
   echo -e "${WHITE}│${NC}  👤 ${GREEN}I am ${YELLOW}s3p${NC}                             │"
@@ -30,7 +26,6 @@ about_me() {
   echo
 }
 
-# Menu
 menu() {
   echo -e "${YELLOW}Please select an option:${NC}"
   echo -e "${GREEN}[1]${NC} Prerequisites"
@@ -39,12 +34,35 @@ menu() {
   echo -e "${GREEN}[4]${NC} Exit"
 }
 
-# Functions for each menu option
 prerequisites() {
   echo -e "${BLUE}Checking prerequisites...${NC}"
   sleep 1
-  pkg update && pkg install qemu-utils qemu-system-x86_64-headless curl -y
-  curl -O https://0x4.s3.ir-thr-at1.arvanstorage.ir/xp.iso
+
+  required_cmds=("pkg" "wget" "qemu-img" "qemu-system-x86_64")
+  for cmd in "${required_cmds[@]}"; do
+    if ! command -v "$cmd" &>/dev/null; then
+      echo -e "${RED}Missing required command: $cmd${NC}"
+      echo -e "${YELLOW}Attempting to install: $cmd${NC}"
+      pkg install "$cmd" -y || {
+        echo -e "${RED}Failed to install $cmd. Exiting.${NC}"
+        exit 1
+      }
+    fi
+  done
+
+  ISO_URL="https://0x4.s3.ir-thr-at1.arvanstorage.ir/xp.iso"
+  ISO_FILE="xp.iso"
+
+  if [[ ! -f $ISO_FILE ]]; then
+    echo -e "${CYAN}Downloading Windows XP ISO...${NC}"
+    wget -O "$ISO_FILE" "$ISO_URL" || {
+      echo -e "${RED}Failed to download ISO.${NC}"
+      exit 1
+    }
+  else
+    echo -e "${GREEN}ISO already exists. Skipping download.${NC}"
+  fi
+
   echo -e "${GREEN}All prerequisites satisfied.${NC}"
 }
 
@@ -55,30 +73,28 @@ installer() {
   read -rp "Disk: " disk_space
   sleep 1
   echo -e "${CYAN}Creating qcow2 Disk...${NC}"
-  qemu-img create -f qcow2 winxp.qcow2 $disk_space 
-  sleep 2 
-  echo -e "${GREEN}Disk created successfully.${NC}" 
+  qemu-img create -f qcow2 winxp.qcow2 "$disk_space"
+  sleep 2
+  echo -e "${GREEN}Disk created successfully.${NC}"
   sleep 1
   clear
   echo -e "${CYAN}RAM for Installation (e.g., 1024):${NC}"
   read -rp "RAM: " ram_value
-  echo -echo "${GREEN}Running windows XP installer ..."
-  qemu-system-x86_64 -m $ram_value -cdrom xp.iso -boot d -drive file=winxp.qcow2,format=qcow2 -netdev user,id=n1 -device rtl8139,netdev=n1 -vga std  -display vnc=:2  -cpu pentium3 -rtc base=localtime
+  echo -e "${GREEN}Running Windows XP installer...${NC}"
+  qemu-system-x86_64 -m "$ram_value" -cdrom xp.iso -boot d -drive file=winxp.qcow2,format=qcow2 -netdev user,id=n1 -device rtl8139,netdev=n1 -vga std -display vnc=:2 -cpu pentium3 -rtc base=localtime
 }
 
 boot_up() {
-  echo -e "${CYAN}RAM(e.g., 1024):${NC}"
+  echo -e "${CYAN}RAM (e.g., 1024):${NC}"
   read -rp "RAM: " ram
-  echo -e "${CYAN}CPU(pentium3 or max):${NC}"
-  read -rp "CPU:" cpu_type
+  echo -e "${CYAN}CPU (pentium3 or max):${NC}"
+  read -rp "CPU: " cpu_type
   echo -e "${BLUE}Booting up...${NC}"
   sleep 1
   echo -e "${GREEN}System is now running. (Ctrl + C to shutdown)${NC}"
-  qemu-system-x86_64 -m $ram -drive file=winxp.qcow2,format=qcow2 -netdev user,id=n1 -device rtl8139,netdev=n1 -vga std -display vnc=:2  -cpu $cpu_type -rtc base=localtime -boot c
-
+  qemu-system-x86_64 -m "$ram" -drive file=winxp.qcow2,format=qcow2 -netdev user,id=n1 -device rtl8139,netdev=n1 -vga std -display vnc=:2 -cpu "$cpu_type" -rtc base=localtime -boot c
 }
 
-# Main loop
 while true; do
   clear
   header
@@ -98,4 +114,3 @@ while true; do
   echo -e "${CYAN}Press Enter to return to the menu...${NC}"
   read
 done
-
