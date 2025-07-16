@@ -2,14 +2,14 @@
 A Rootless installation script of windows XP on Termux android
 | Control Panel | Windows XP in Action |
 |---------------|-----------------------|
-| ![ctrlpl](https://raw.githubusercontent.com/0v3rf3ar/winXP-Termux/refs/heads/main/ctrlpl.webp) | ![windowXp](https://raw.githubusercontent.com/0v3rf3ar/winXP-Termux/refs/heads/main/windowXp.webp) |
+| ![ctrlpl](https://raw.githubusercontent.com/0v3rf3ar/WinXP-Termux/refs/heads/main/ctrlpl.webp) | ![windowXp](https://raw.githubusercontent.com/0v3rf3ar/WinXP-Termux/refs/heads/main/windowXp.webp) |
 
 ## 🚀 Usage
 Copy and paste this code below to your termux shell.
 ```bash
 cd ~
 mkdir xp && cd xp
-curl -O https://raw.githubusercontent.com/0v3rf3ar/winXP-Termux/refs/heads/main/control-panel.sh
+curl -O https://raw.githubusercontent.com/0v3rf3ar/WinXP-Termux/refs/heads/main/control-panel.sh
 chmod +x control-panel.sh
 ./control-panel.sh
 ```
