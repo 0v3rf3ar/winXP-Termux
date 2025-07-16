@@ -37,47 +37,44 @@ menu() {
 prerequisites() {
   echo -e "${BLUE}Checking prerequisites...${NC}"
   sleep 1
-
-  required_cmds=("pkg" "wget" "qemu-img" "qemu-system-x86_64")
-  for cmd in "${required_cmds[@]}"; do
-    if ! command -v "$cmd" &>/dev/null; then
-      echo -e "${RED}Missing required command: $cmd${NC}"
-      echo -e "${YELLOW}Attempting to install: $cmd${NC}"
-      pkg install "$cmd" -y || {
-        echo -e "${RED}Failed to install $cmd. Exiting.${NC}"
-        exit 1
-      }
-    fi
-  done
-
-  ISO_URL="https://0x4.s3.ir-thr-at1.arvanstorage.ir/xp.iso"
-  ISO_FILE="xp.iso"
-
-  if [[ ! -f $ISO_FILE ]]; then
+  pkg update && pkg install qemu-utils qemu-system-x86_64-headless wget -y
+  if [ ! -f "xp.iso" ]; then
     echo -e "${CYAN}Downloading Windows XP ISO...${NC}"
-    wget -O "$ISO_FILE" "$ISO_URL" || {
-      echo -e "${RED}Failed to download ISO.${NC}"
-      exit 1
-    }
+    wget https://0x4.s3.ir-thr-at1.arvanstorage.ir/xp.iso -O xp.iso
   else
-    echo -e "${GREEN}ISO already exists. Skipping download.${NC}"
+    echo -e "${YELLOW}xp.iso already exists. Skipping download.${NC}"
   fi
-
   echo -e "${GREEN}All prerequisites satisfied.${NC}"
 }
 
 installer() {
-  echo -e "${BLUE}Running installer...${NC}"
-  sleep 1
+  if [ ! -f "xp.iso" ]; then
+    echo -e "${RED}xp.iso not found. Please run prerequisites first.${NC}"
+    return
+  fi
+
+  expected_checksum="2074cdb6711c8edae43051566583a60570586902"
+  actual_checksum=$(sha1sum xp.iso | awk '{print $1}')
+
+  if [ "$actual_checksum" != "$expected_checksum" ]; then
+    echo -e "${RED}Warning: Checksum mismatch for xp.iso${NC}"
+    echo -e "${YELLOW}Expected:${NC} $expected_checksum"
+    echo -e "${YELLOW}Actual:  ${NC} $actual_checksum"
+    read -rp "$(echo -e ${RED}Continue anyway? [y/N]:${NC} )" proceed
+    if [[ ! "$proceed" =~ ^[Yy]$ ]]; then
+      echo -e "${RED}Aborted due to checksum mismatch.${NC}"
+      return
+    fi
+  else
+    echo -e "${GREEN}Checksum verified successfully.${NC}"
+  fi
+
   echo -e "${CYAN}Enter desired Disk Space (e.g., 10G):${NC}"
   read -rp "Disk: " disk_space
-  sleep 1
   echo -e "${CYAN}Creating qcow2 Disk...${NC}"
   qemu-img create -f qcow2 winxp.qcow2 "$disk_space"
-  sleep 2
   echo -e "${GREEN}Disk created successfully.${NC}"
-  sleep 1
-  clear
+
   echo -e "${CYAN}RAM for Installation (e.g., 1024):${NC}"
   read -rp "RAM: " ram_value
   echo -e "${GREEN}Running Windows XP installer...${NC}"
@@ -85,9 +82,9 @@ installer() {
 }
 
 boot_up() {
-  echo -e "${CYAN}RAM (e.g., 1024):${NC}"
+  echo -e "${CYAN}RAM(e.g., 1024):${NC}"
   read -rp "RAM: " ram
-  echo -e "${CYAN}CPU (pentium3 or max):${NC}"
+  echo -e "${CYAN}CPU(pentium3 or max):${NC}"
   read -rp "CPU: " cpu_type
   echo -e "${BLUE}Booting up...${NC}"
   sleep 1
